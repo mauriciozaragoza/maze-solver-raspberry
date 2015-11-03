@@ -38,21 +38,28 @@ double Maze::heuristic(int x, int y, int x2, int y2, Mat &walls)
 
 void Maze::depth_first_search(Mat &maze, Mat &solve, int start_x, int start_y, int dest_x, int dest_y)
 {
-	int finish_x;
-	int finish_y;
-
 	Mat walls = solve.clone();
 
-	// Create the backpointer array to find the path
-	vector <vector <pair<int, int> > > path;
-	path.resize(maze.rows);
+	// Clear the existing path array
+	for (int i = 0; i < path.size(); i++)
+	{
+		this->path[i].clear();
+	}
+	this->path.clear();
+
+	// Re-create the path
+	this->path.resize(maze.rows);
 	for (int i = 0; i < maze.rows; i++)
 	{
-		path[i].resize(maze.cols);
+		this->path[i].resize(maze.cols);
 	}
 
 	priority_queue< state, vector<state>, greater<state> > q;
+
 	q.push(make_tuple(0, start_x, start_y, 0, 0));
+
+	this->closest_spot = make_pair(start_y, start_x);
+	double closest_distance = 1000000.0;
 
 	while (!q.empty())
 	{
@@ -68,12 +75,19 @@ void Maze::depth_first_search(Mat &maze, Mat &solve, int start_x, int start_y, i
 		if (x < 0 || x >= maze.cols || y < 0 || y >= maze.rows) continue;
 		if (solve.at<unsigned char>(y, x) < 128) continue;
 		
-		path[y][x] = make_pair(y_prev, x_prev);
+		this->path[y][x] = make_pair(y_prev, x_prev);
+
+		double current_dist = euclidean(x, y, dest_x, dest_y);
+		
+		if (current_dist < closest_distance)
+		{
+			this->closest_spot.first = y;
+			this->closest_spot.second = x;
+			closest_distance = current_dist;
+		}
 		
 		if (abs(x - dest_x) < 3 && abs(y - dest_y) < 3)
 		{
-			finish_x = x;
-			finish_y = y;
 			break;
 		} 
 
@@ -89,11 +103,46 @@ void Maze::depth_first_search(Mat &maze, Mat &solve, int start_x, int start_y, i
 		q.push(make_tuple(weight + heuristic(x + 1, y - 1, dest_x, dest_y, walls), x + 1, y - 1, x, y));
 		q.push(make_tuple(weight + heuristic(x - 1, y - 1, dest_x, dest_y, walls), x - 1, y - 1, x, y));
 	}
+}
 
-	pair<int, int> current = path[finish_y][finish_x];
+pair<int, int> Maze::next_step(int start_x, int start_y)
+{
+	pair<int, int> current = this->path[this->closest_spot.first][this->closest_spot.second],
+				   previous,
+				   start_point = make_pair(start_y, start_x);
+
+	double current_dist = 100000000,
+		   new_dist;
+
+	pair<int, int> closest_spot;
+
 	do
 	{
-		current = path[current.first][current.second];
+		previous = current;
+		current = this->path[current.first][current.second];
+
+		new_dist = euclidean(start_x, start_y, current.second, current.first);
+
+		if (new_dist <= current_dist) 
+		{
+			current_dist = new_dist;
+			closest_spot = previous;
+		}
+	} 
+	while (current != this->path[current.first][current.second]);
+
+	return closest_spot;
+}
+
+void Maze::draw_path(Mat &maze, int start_x, int start_y)
+{
+	pair<int, int> current = this->path[this->closest_spot.first][this->closest_spot.second],
+				   start_point = make_pair(start_y, start_x);
+
+	do
+	{
+		current = this->path[current.first][current.second];
 		maze.at<Vec3b>(current.first, current.second) = Vec3b(0, 255, 0);
-	} while (current != make_pair(start_y, start_x));
+	} 
+	while (current != this->path[current.first][current.second]);
 }

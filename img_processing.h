@@ -11,13 +11,13 @@
 using namespace cv;
 using namespace std;
 
-const Size MAZE_SIZE3(250, 250);
+const Size MAZE_SIZE3(500, 500);
 
 class ImageProc
 {
 public:
 	void processing_grid(Mat, Mat);
-	void get_points(Mat, Point &, Point &);
+	void get_point(Mat, Point &, int);
 	Mat undistorted_grid(Mat, Mat);
 
 private:

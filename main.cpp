@@ -18,9 +18,10 @@ using namespace std;
 
 Size MAZE_SIZE2(250, 250);
 
-int main()
+int main(int argc, char** argv)
 {
-	Mat maze = imread("maze.png", 0);
+    const char* image_name = argc > 1 ? argv[1] : "maze.png";
+	Mat maze = imread(image_name, 0);
 	Mat grid = Mat(maze.size(), CV_8UC1);
 
 	ImageProc processing;
@@ -51,7 +52,8 @@ int main()
 	cout << end;
 
 	solver.depth_first_search(undistorted, solve, start.x, start.y, end.x, end.y);
-	
+	solver.draw_path(undistorted, start.x, start.y);
+
 	imshow("un", undistorted);
 	// imshow("sol", solve);
 

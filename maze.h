@@ -22,9 +22,12 @@ public:
 	double euclidean(int, int, int, int);
 	double heuristic(int, int, int, int, Mat &);
 	void depth_first_search(Mat &, Mat &, int, int, int, int);
+	pair<int, int> next_step(int, int);
+	void draw_path(Mat &, int, int);
 
 private:
-	
+	vector <vector <pair<int, int> > > path;
+	pair<int, int> closest_spot;
 };
 
 #endif
