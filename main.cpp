@@ -36,7 +36,8 @@ int main()
 
 	Point start;
 	Point end;
-	processing.get_points(undistorted, start, end);
+	processing.get_point(undistorted, start, 0);
+	processing.get_point(undistorted, end, 120);
 
 	Mat solve = processing.undistorted_grid(grid, grid);
 	bitwise_not(solve, solve);

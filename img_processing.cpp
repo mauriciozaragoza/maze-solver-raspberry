@@ -7,43 +7,28 @@ void ImageProc::processing_grid(Mat original_grid, Mat result_grid)
 	bitwise_not(result_grid, result_grid);
 }
 
-void ImageProc::get_points(Mat grid, Point &start, Point &end)
+void ImageProc::get_point(Mat grid, Point &point, int color)
 {
 	Mat HSV;
-	Mat start_point_img;
-	Mat end_point_img;
-	resize(grid, grid, MAZE_SIZE3);
+	Mat hsv_img;
 
 	cvtColor(grid, HSV, CV_BGR2HSV);
-	inRange(HSV, Scalar(110, 150, 150), Scalar(130, 255, 255), end_point_img);
-	inRange(HSV, Scalar(0, 100, 100), Scalar(10, 255, 255), start_point_img);
+	inRange(HSV, Scalar(color, 150, 150), Scalar(color + 10, 255, 255), hsv_img);
 
-	for (int y = 0; y < start_point_img.size().height; y++)
+	for (int y = 0; y < hsv_img.size().height; y++)
 	{
-		uchar *row = start_point_img.ptr(y);
-		for (int x = 0; x < start_point_img.size().width; x++)
+		uchar *row = hsv_img.ptr(y);
+		for (int x = 0; x < hsv_img.size().width; x++)
 		{
 			if (row[x] == 255)
 			{
-				start.x = x;
-				start.y = y;
-			}
-		}
-	}
-
-	for (int y = 0; y < end_point_img.size().height; y++)
-	{
-		uchar *row = end_point_img.ptr(y);
-		for (int x = 0; x < end_point_img.size().width; x++)
-		{
-			if (row[x] == 255)
-			{
-				end.x = x;
-				end.y = y;
+				point.x = x;
+				point.y = y;
 			}
 		}
 	}
 }
+
 
 Mat ImageProc::undistorted_grid(Mat processed_grid, Mat original_grid)
 {
