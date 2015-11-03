@@ -4,83 +4,56 @@
 #include <queue>
 #include <vector>
 #include <tuple>
-#include <opencv2/highgui/highgui.hpp>
+#include <string>
+
+#include "maze.h"
+#include "img_processing.h"
+
+#include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace cv;
 using namespace std;
 
-typedef tuple<int, int, int, int, int> state;
+Size MAZE_SIZE2(250, 250);
 
-int dest_x = 150;
-int dest_y = 0;
-int start_x = 0;
-int start_y = 45;
-
-int euclidean(int x, int y, int x2, int y2)
+int main()
 {
-	return sqrt(pow((x - x2), 2) + pow((y - y2), 2));
-}
+	Mat maze = imread("maze.png", 0);
+	Mat grid = Mat(maze.size(), CV_8UC1);
 
-void depth_first_search(Mat &maze, Mat &solve)
-{	
-	pair<int, int> path[500][500];
-	priority_queue< state, vector<state>, greater<state> > q;
-	q.push(make_tuple(0, start_x, start_y, 0, 0));
+	ImageProc processing;
+	Maze solver;
 
-	while (!q.empty())
-	{	
-		state current = q.top();
-		q.pop();
 
-		int weight = get<0>(current);
-		int x = get<1>(current);
-		int y = get<2>(current);
-		int x_prev = get<3>(current);
-		int y_prev = get<4>(current);
+	// imshow("original", maze);
 
-		if (x < 0 || x >= maze.cols || y < 0 || y >= maze.rows) continue;
-		if (solve.at<unsigned char>(y, x) == 0) continue;
-		
-		path[y][x] = make_pair(y_prev, x_prev);
-		
-		if (x == dest_x && y == dest_y) break;
+	processing.processing_grid(maze, grid);
 
-		solve.at<unsigned char>(y, x) = 0;
+	Mat color_maze = imread("maze.png", CV_LOAD_IMAGE_COLOR);
+	Mat undistorted = processing.undistorted_grid(grid, color_maze);
 
-		q.push(make_tuple(weight + euclidean(x, y, dest_x, dest_y), x + 1, y, x, y));
-		q.push(make_tuple(weight + euclidean(x, y, dest_x, dest_y), x - 1, y, x, y));
-		q.push(make_tuple(weight + euclidean(x, y, dest_x, dest_y), x, y + 1, x, y));
-		q.push(make_tuple(weight + euclidean(x, y, dest_x, dest_y), x, y - 1, x, y));
-	}
+	Point start;
+	Point end;
+	processing.get_points(undistorted, start, end);
 
-	pair<int, int> current = path[dest_y][dest_x];
-	do
-	{
-		current = path[current.first][current.second];
-		maze.at<Vec3b>(current.first, current.second) = Vec3b(0, 255, 0);
-	} while(current != make_pair(start_y, start_x));
-}
+	Mat solve = processing.undistorted_grid(grid, grid);
+	bitwise_not(solve, solve);
 
-int main() 
-{	
-	Mat maze = imread("maze3.png", CV_LOAD_IMAGE_COLOR);
-	Mat solve = imread("maze3.png", CV_LOAD_IMAGE_GRAYSCALE);
+	resize(solve, solve, MAZE_SIZE2);
+	resize(undistorted, undistorted, MAZE_SIZE2);
 
-	if (maze.empty() || solve.empty())
-    {
-        cerr << "Could not load image" << endl;
-        return -1;
-    }
+	// imshow("to solve", solve);
 
-    if (!maze.data || !solve.data) 
-    {
-        cerr << "Empty image?" << solve.data << " " << maze.data << endl;
-        return -1;
-    }
+	cout << start;
+	cout << end;
 
-	depth_first_search(maze, solve);
-	imshow("maze", maze);
-	waitKey();
-	return 0;
+	solver.depth_first_search(undistorted, solve, start.x, start.y, end.x, end.y);
+	
+	imshow("un", undistorted);
+	// imshow("sol", solve);
+
+	cvWaitKey();
+	return 1;
 }
