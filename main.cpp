@@ -16,46 +16,57 @@
 using namespace cv;
 using namespace std;
 
-Size MAZE_SIZE2(250, 250);
-
 int main(int argc, char** argv)
 {
     const char* image_name = argc > 1 ? argv[1] : "maze.png";
-	Mat maze = imread(image_name, 0);
-	Mat grid = Mat(maze.size(), CV_8UC1);
 
 	ImageProc processing;
 	Maze solver;
 
+	Mat thresh_maze = imread(image_name, CV_LOAD_IMAGE_GRAYSCALE);
+	Mat color_maze = imread(image_name, CV_LOAD_IMAGE_COLOR);
+	// Mat grid = Mat(maze.size(), CV_8UC1);
 
 	// imshow("original", maze);
 
-	processing.processing_grid(maze, grid);
+	// Preprocess the image
+	processing.preprocess_image(thresh_maze, thresh_maze);
 
-	Mat color_maze = imread("maze.png", CV_LOAD_IMAGE_COLOR);
-	Mat undistorted = processing.undistorted_grid(grid, color_maze);
+	processing.resize_to_max(thresh_maze, 250);
+	processing.resize_to_max(color_maze, 250);
+
+	// Perspective correcting requires walls to be white
+	bitwise_not(thresh_maze, thresh_maze);
+
+	// Correct perspective
+	color_maze = processing.undistorted_grid(thresh_maze, color_maze);
+	thresh_maze = processing.undistorted_grid(thresh_maze, thresh_maze);
+
+	// Return wall colors to normal
+	bitwise_not(thresh_maze, thresh_maze);
+
+	processing.resize_to_max(thresh_maze, 250);
+	processing.resize_to_max(color_maze, 250);
 
 	Point start;
 	Point end;
-	processing.get_point(undistorted, start, 0);
-	processing.get_point(undistorted, end, 120);
 
-	Mat solve = processing.undistorted_grid(grid, grid);
-	bitwise_not(solve, solve);
+	processing.get_point(color_maze, start, 0, 20);
+	processing.get_point(color_maze, end, 120, 20);
 
-	resize(solve, solve, MAZE_SIZE2);
-	resize(undistorted, undistorted, MAZE_SIZE2);
+	// imshow("to thresh_maze", thresh_maze);
 
-	// imshow("to solve", solve);
+	cout << start << " " << end << endl;
 
-	cout << start;
-	cout << end;
+	// imshow("un", thresh_maze);
 
-	solver.depth_first_search(undistorted, solve, start.x, start.y, end.x, end.y);
-	solver.draw_path(undistorted, start.x, start.y);
+	cout << "A" << endl;
+	solver.depth_first_search(color_maze, thresh_maze, start.x, start.y, end.x, end.y);
+	cout << "B" << endl;
+	solver.draw_path(color_maze, start.x, start.y);
+	cout << "C" << endl;
 
-	imshow("un", undistorted);
-	// imshow("sol", solve);
+	imshow("sol", color_maze);
 
 	cvWaitKey();
 	return 1;

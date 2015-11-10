@@ -1,34 +1,125 @@
 #include "img_processing.h"
 
-void ImageProc::processing_grid(Mat original_grid, Mat result_grid)
+void ImageProc::resize_to_max(Mat &img, int max_dimension)
 {
-	GaussianBlur(original_grid, result_grid, Size(11, 11), 0);
-	adaptiveThreshold(result_grid, result_grid, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 5, 3);
-	bitwise_not(result_grid, result_grid);
+	double ratio_x = img.cols / (double)max_dimension,
+		   ratio_y = img.rows / (double)max_dimension;
+
+	Size new_size;
+
+	if (ratio_x > ratio_y) 
+	{
+		new_size.width = max_dimension;
+		new_size.height = img.rows / ratio_x;
+	}
+	else
+	{
+		new_size.height = max_dimension;
+		new_size.width = img.cols / ratio_y;
+	}
+
+	resize(img, img, new_size);
 }
 
-void ImageProc::get_point(Mat grid, Point &point, int color)
+void ImageProc::preprocess_image(Mat &img, Mat &dest)
+{
+	const int IMAGE_THRESH_SEGMENTS = 6;
+	// const int MAX_THRESH = 192;
+	const Mat kernel = (Mat_<uchar>(3, 3) << 0, 1, 0, 1, 1, 1, 0, 1, 0);
+
+	int blur_x = img.cols / 100,
+		blur_y = img.rows / 100;
+
+	// Must be odd-numbered
+	blur_x += (1 - blur_x % 2);
+	blur_y += (1 - blur_y % 2);
+
+	// Equalize histogram
+	// equalizeHist(img, dest);
+
+	// Blur to remove noisy bits
+	GaussianBlur(
+		dest, 
+		dest, 
+		Size(blur_x, blur_y),
+		0);
+
+	// threshold(
+	// 	dest, 
+	// 	dest, 
+	// 	128, 
+	// 	255, 
+	// 	CV_THRESH_BINARY);
+
+	// Apply threshold on segments of the image
+	for (int i = 0; i < IMAGE_THRESH_SEGMENTS; i++) 
+	{
+		for (int j = 0; j < IMAGE_THRESH_SEGMENTS; j++)
+		{
+			Mat segment = dest(Rect(
+				j * dest.cols / IMAGE_THRESH_SEGMENTS,
+				i * dest.rows / IMAGE_THRESH_SEGMENTS,
+				((j + 1) * dest.cols / IMAGE_THRESH_SEGMENTS) - (j * dest.cols / IMAGE_THRESH_SEGMENTS), // dest.cols / IMAGE_THRESH_SEGMENTS,
+				((i + 1) * dest.rows / IMAGE_THRESH_SEGMENTS) - (i * dest.rows / IMAGE_THRESH_SEGMENTS) // dest.rows / IMAGE_THRESH_SEGMENTS
+			));
+
+			int thresh = threshold(
+				segment, 
+				segment, 
+				0, 
+				255, 
+				CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+			// Just make it white if there are no walls in it
+			// if (thresh > MAX_THRESH)
+			// {
+			// 	segment = Scalar(255);
+			// }
+
+			// adaptiveThreshold(
+		 //        segment, 
+		 //        segment, 
+		 //        255, 
+		 //        ADAPTIVE_THRESH_MEAN_C,
+		 //        THRESH_BINARY,
+		 //        5,
+		 //        3);
+		}
+	}
+
+	// bitwise_not(dest, dest);
+	// dilate(dest, dest, kernel);
+	// bitwise_not(dest, dest);
+}
+
+void ImageProc::get_point(Mat img, Point &point, int color, int tolerance)
 {
 	Mat HSV;
-	Mat hsv_img;
 
-	cvtColor(grid, HSV, CV_BGR2HSV);
-	inRange(HSV, Scalar(color, 150, 150), Scalar(color + 10, 255, 255), hsv_img);
+	cvtColor(img, HSV, CV_BGR2HSV);
 
-	for (int y = 0; y < hsv_img.size().height; y++)
+	// cout << "goes from: " << Scalar((color + 180 - tolerance) % 180, 150, 150) << " to " << Scalar((color + tolerance) % 180, 255, 255) << endl;
+
+	int value1 = (color + 180 - tolerance) % 180,
+		value2 = (color + tolerance) % 180;
+
+	inRange(HSV, Scalar(min(value1, value2), 150, 150), Scalar(max(value1, value2), 255, 255), HSV);
+
+	for (int y = 0; y < HSV.size().height; y++)
 	{
-		uchar *row = hsv_img.ptr(y);
-		for (int x = 0; x < hsv_img.size().width; x++)
+		uchar *row = HSV.ptr(y);
+		for (int x = 0; x < HSV.size().width; x++)
 		{
 			if (row[x] == 255)
 			{
 				point.x = x;
 				point.y = y;
+
+				return;
 			}
 		}
 	}
 }
-
 
 Mat ImageProc::undistorted_grid(Mat processed_grid, Mat original_grid)
 {

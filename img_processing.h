@@ -16,8 +16,9 @@ const Size MAZE_SIZE3(500, 500);
 class ImageProc
 {
 public:
-	void processing_grid(Mat, Mat);
-	void get_point(Mat, Point &, int);
+    void resize_to_max(Mat &, int);
+	void preprocess_image(Mat &, Mat &);
+	void get_point(Mat, Point &, int, int = 10);
 	Mat undistorted_grid(Mat, Mat);
 
 private:

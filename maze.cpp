@@ -7,33 +7,34 @@ double Maze::euclidean(int x, int y, int x2, int y2)
 
 double Maze::heuristic(int x, int y, int x2, int y2, Mat &walls)
 {
-	double wall_density = 0.0;
-	const int frame_size = 3;
+	// double wall_density = 0.0;
+	// const int frame_size = 3;
 
-	for (int i = -frame_size; i < frame_size; i++) 
-	{
-		for (int j = -frame_size; j < frame_size; j++) 
-		{
-			if (x < walls.cols && x >= 0 &&
-				y < walls.rows && y >= 0)
-			{
-				// add penalty for having walls nearby
-				if (((int)walls.at<unsigned char>(y + i, x + j)) < 128)
-				{
-					// cout << "penalty: " << 1.0 / (euclidean(x, y, x + j, y + i) / frame_size) + 0.1 << endl;
-					wall_density += 1.0 / ((euclidean(x, y, x + j, y + i) / (frame_size * frame_size)) + 0.01);
-				}
-			}
-			else
-			{
-				wall_density += 3.0;
-			}
-		}
-	}
+	// for (int i = -frame_size; i < frame_size; i++) 
+	// {
+	// 	for (int j = -frame_size; j < frame_size; j++) 
+	// 	{
+	// 		if (x < walls.cols && x >= 0 &&
+	// 			y < walls.rows && y >= 0)
+	// 		{
+	// 			// add penalty for having walls nearby
+	// 			if (((int)walls.at<unsigned char>(y + i, x + j)) < 128)
+	// 			{
+	// 				// cout << "penalty: " << 1.0 / (euclidean(x, y, x + j, y + i) / frame_size) + 0.1 << endl;
+	// 				wall_density += 1.0 / ((euclidean(x, y, x + j, y + i) / (frame_size * frame_size)) + 0.01);
+	// 			}
+	// 		}
+	// 		else
+	// 		{
+	// 			wall_density += 3.0;
+	// 		}
+	// 	}
+	// }
 
-	// cout << x << " " << y << " " << ((int)walls.at<unsigned char>(x, y)) << " " << wall_density << endl;
+	// // cout << x << " " << y << " " << ((int)walls.at<unsigned char>(x, y)) << " " << wall_density << endl;
 
-	return euclidean(x, y, x2, y2) + wall_density / (double)(frame_size * frame_size);
+	// return euclidean(x, y, x2, y2) + wall_density / (double)(frame_size * frame_size);
+	return euclidean(x, y, x2, y2);
 }
 
 void Maze::depth_first_search(Mat &maze, Mat &solve, int start_x, int start_y, int dest_x, int dest_y)
@@ -86,7 +87,7 @@ void Maze::depth_first_search(Mat &maze, Mat &solve, int start_x, int start_y, i
 			closest_distance = current_dist;
 		}
 		
-		if (abs(x - dest_x) < 3 && abs(y - dest_y) < 3)
+		if (abs(x - dest_x) < 10 && abs(y - dest_y) < 10)
 		{
 			break;
 		} 
@@ -139,10 +140,16 @@ void Maze::draw_path(Mat &maze, int start_x, int start_y)
 	pair<int, int> current = this->path[this->closest_spot.first][this->closest_spot.second],
 				   start_point = make_pair(start_y, start_x);
 
-	do
+	for (int i = 0; i < 10000; i++) 
 	{
 		current = this->path[current.first][current.second];
-		maze.at<Vec3b>(current.first, current.second) = Vec3b(0, 255, 0);
-	} 
-	while (current != this->path[current.first][current.second]);
+		maze.at<Vec3b>(current.first, current.second) = Vec3b(0, 255, 0);	
+	}
+
+	// do
+	// {
+	// 	current = this->path[current.first][current.second];
+	// 	maze.at<Vec3b>(current.first, current.second) = Vec3b(0, 255, 0);
+	// } 
+	// while (current != this->path[current.first][current.second]);
 }
