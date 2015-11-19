@@ -8,6 +8,7 @@
 
 #include "maze.h"
 #include "img_processing.h"
+#include "control.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -32,8 +33,8 @@ int main(int argc, char** argv)
 	// Preprocess the image
 	processing.preprocess_image(thresh_maze, thresh_maze);
 
-	processing.resize_to_max(thresh_maze, 250);
-	processing.resize_to_max(color_maze, 250);
+	processing.resize_to_max(thresh_maze, 500);
+	processing.resize_to_max(color_maze, 500);
 
 	// Perspective correcting requires walls to be white
 	bitwise_not(thresh_maze, thresh_maze);
@@ -45,8 +46,8 @@ int main(int argc, char** argv)
 	// Return wall colors to normal
 	bitwise_not(thresh_maze, thresh_maze);
 
-	processing.resize_to_max(thresh_maze, 250);
-	processing.resize_to_max(color_maze, 250);
+	processing.resize_to_max(thresh_maze, 500);
+	processing.resize_to_max(color_maze, 500);
 
 	Point start;
 	Point end;
