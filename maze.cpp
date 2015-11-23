@@ -1,73 +1,79 @@
 #include "maze.h"
 
-double Maze::euclidean(int x, int y, int x2, int y2)
+double Maze::euclidean(double x, double y, double x2, double y2)
 {
 	return sqrt(pow((x - x2), 2) + pow((y - y2), 2));
 }
 
-double Maze::heuristic(int x, int y, int x2, int y2, Mat &walls)
+double Maze::manhattan(double x, double y, double x2, double y2)
 {
-	// double wall_density = 0.0;
-	// const int frame_size = 3;
-
-	// for (int i = -frame_size; i < frame_size; i++) 
-	// {
-	// 	for (int j = -frame_size; j < frame_size; j++) 
-	// 	{
-	// 		if (x < walls.cols && x >= 0 &&
-	// 			y < walls.rows && y >= 0)
-	// 		{
-	// 			// add penalty for having walls nearby
-	// 			if (((int)walls.at<unsigned char>(y + i, x + j)) < 128)
-	// 			{
-	// 				// cout << "penalty: " << 1.0 / (euclidean(x, y, x + j, y + i) / frame_size) + 0.1 << endl;
-	// 				wall_density += 1.0 / ((euclidean(x, y, x + j, y + i) / (frame_size * frame_size)) + 0.01);
-	// 			}
-	// 		}
-	// 		else
-	// 		{
-	// 			wall_density += 3.0;
-	// 		}
-	// 	}
-	// }
-
-	// // cout << x << " " << y << " " << ((int)walls.at<unsigned char>(x, y)) << " " << wall_density << endl;
-
-	// return euclidean(x, y, x2, y2) + wall_density / (double)(frame_size * frame_size);
-	return euclidean(x, y, x2, y2);
+	return abs(x - x2) + abs(y - y2);
 }
 
-void Maze::depth_first_search(Mat &maze, Mat &solve, int start_x, int start_y, int dest_x, int dest_y)
+void Maze::depth_first_search(Mat &maze, Mat &solve, int dest_x, int dest_y)
 {
-	Mat walls = solve.clone();
+	const int TOLERANCE_SIZE = 10;
+	const double WALL_HEURISTIC_ALPHA = 50.0;
+	// Mat walls = solve.clone();
 
-	// Clear the existing path array
-	for (int i = 0; i < path.size(); i++)
-	{
-		this->path[i].clear();
-	}
-	this->path.clear();
+	queue<state> q;
+	priority_queue<shortest_state, vector<shortest_state>, greater<shortest_state> > q_prime;
+	vector< vector<bool> > visited(maze.rows, vector<bool>(maze.cols, false));
+	vector< vector<int> > wall_distance(maze.rows, vector<int>(maze.cols, -1));
+	this->path = vector< vector< pair<int, int> > >(maze.rows, vector< pair<int, int> >(maze.cols, make_pair(-1, -1)));
 
-	// Re-create the path
-	this->path.resize(maze.rows);
+	// Compute the wall-distance for each cell
+	// Add all cells with wall
 	for (int i = 0; i < maze.rows; i++)
 	{
-		this->path[i].resize(maze.cols);
+		for (int j = 0; j < maze.cols; j++) 
+		{
+			if (solve.at<unsigned char>(i, j) < 128)
+			{
+				q.push(make_tuple(j, i, 1, -1));
+			}
+		}
 	}
 
-	priority_queue< state, vector<state>, greater<state> > q;
-
-	q.push(make_tuple(0, start_x, start_y, 0, 0));
-
-	this->closest_spot = make_pair(start_y, start_x);
-	double closest_distance = 1000000.0;
-
+	// BFS to cover all cells and put their wall-distance value
 	while (!q.empty())
 	{
-		state current = q.top();
+		state current = q.front();
 		q.pop();
 
-		int weight = get<0>(current);
+		int x = get<0>(current);
+		int y = get<1>(current);
+		int current_distance = get<2>(current);
+
+		if (x < 0 || x >= maze.cols || y < 0 || y >= maze.rows) continue;
+		if (wall_distance[y][x] != -1) continue;
+		
+		wall_distance[y][x] = current_distance;
+
+		q.push(make_tuple(x + 1, y, current_distance + 1, -1));
+		q.push(make_tuple(x - 1, y, current_distance + 1, -1));
+		q.push(make_tuple(x, y + 1, current_distance + 1, -1));
+		q.push(make_tuple(x, y - 1, current_distance + 1, -1));
+	}
+
+	// ***********************
+	// Compute the actual path
+	// ***********************
+
+	for (int i = 0; i < TOLERANCE_SIZE; i++) 
+	{
+		for (int j = 0; j < TOLERANCE_SIZE; j++)
+		{
+			q_prime.push(make_tuple(0, dest_x + i, dest_y + j, -1, -1));
+		}
+	}
+
+	while (!q_prime.empty())
+	{
+		shortest_state current = q_prime.top();
+		q_prime.pop();
+
+		double cost = get<0>(current);
 		int x = get<1>(current);
 		int y = get<2>(current);
 		int x_prev = get<3>(current);
@@ -76,80 +82,88 @@ void Maze::depth_first_search(Mat &maze, Mat &solve, int start_x, int start_y, i
 		if (x < 0 || x >= maze.cols || y < 0 || y >= maze.rows) continue;
 		if (solve.at<unsigned char>(y, x) < 128) continue;
 		
-		this->path[y][x] = make_pair(y_prev, x_prev);
-
-		double current_dist = euclidean(x, y, dest_x, dest_y);
-		
-		if (current_dist < closest_distance)
-		{
-			this->closest_spot.first = y;
-			this->closest_spot.second = x;
-			closest_distance = current_dist;
-		}
-		
-		if (abs(x - dest_x) < 10 && abs(y - dest_y) < 10)
-		{
-			break;
-		} 
+		this->path[y][x] = make_pair(x_prev, y_prev);
 
 		solve.at<unsigned char>(y, x) = 0;
+		visited[y][x] = true;
 
-		q.push(make_tuple(weight + heuristic(x + 1, y, dest_x, dest_y, walls), x + 1, y, x, y));
-		q.push(make_tuple(weight + heuristic(x - 1, y, dest_x, dest_y, walls), x - 1, y, x, y));
-		q.push(make_tuple(weight + heuristic(x, y + 1, dest_x, dest_y, walls), x, y + 1, x, y));
-		q.push(make_tuple(weight + heuristic(x, y - 1, dest_x, dest_y, walls), x, y - 1, x, y));
+		int dist = WALL_HEURISTIC_ALPHA / wall_distance[y][x];
 
-		q.push(make_tuple(weight + heuristic(x + 1, y - 1, dest_x, dest_y, walls), x + 1, y - 1, x, y));
-		q.push(make_tuple(weight + heuristic(x + 1, y + 1, dest_x, dest_y, walls), x + 1, y + 1, x, y));
-		q.push(make_tuple(weight + heuristic(x + 1, y - 1, dest_x, dest_y, walls), x + 1, y - 1, x, y));
-		q.push(make_tuple(weight + heuristic(x - 1, y - 1, dest_x, dest_y, walls), x - 1, y - 1, x, y));
+		q_prime.push(make_tuple(cost + dist, x + 1, y, x, y));
+		q_prime.push(make_tuple(cost + dist, x - 1, y, x, y));
+		q_prime.push(make_tuple(cost + dist, x, y + 1, x, y));
+		q_prime.push(make_tuple(cost + dist, x, y - 1, x, y));
+	}
+
+	// Second BFS pass through to escape from unreachable places in case it gets stuck
+	q = queue<state>();
+
+	// Add already-known places
+	for (int i = 0; i < maze.rows; i++)
+	{
+		for (int j = 0; j < maze.cols; j++) 
+		{
+			if (visited[i][j])
+			{
+				q.push(make_tuple(j, i, -1, -1));
+			}
+		}
+	}
+
+	vector< vector<bool> > revisited(maze.rows, vector<bool>(maze.cols, false));
+
+	while (!q.empty())
+	{
+		state current = q.front();
+		q.pop();
+
+		int x = get<0>(current);
+		int y = get<1>(current);
+		int x_prev = get<2>(current);
+		int y_prev = get<3>(current);
+
+		if (x < 0 || x >= maze.cols || y < 0 || y >= maze.rows) continue;
+		if (revisited[y][x]) continue;
+		revisited[y][x] = true;
+
+		if (!visited[y][x])
+		{
+			this->path[y][x] = make_pair(x_prev, y_prev);
+			visited[y][x] = true;
+		}
+
+		q.push(make_tuple(x + 1, y, x, y));
+		q.push(make_tuple(x - 1, y, x, y));
+		q.push(make_tuple(x, y + 1, x, y));
+		q.push(make_tuple(x, y - 1, x, y));
 	}
 }
 
-pair<int, int> Maze::next_step(int start_x, int start_y)
+
+pair<int, int> Maze::next_step(int start_x, int start_y, int trail_size)
 {
-	pair<int, int> current = this->path[this->closest_spot.first][this->closest_spot.second],
-				   previous,
-				   start_point = make_pair(start_y, start_x);
+	pair<int, int> current = this->path[start_y][start_x],
+				   next;
 
-	double current_dist = 100000000,
-		   new_dist;
-
-	pair<int, int> closest_spot;
-
-	do
+	for (int i = 0; i < trail_size; i++)
 	{
-		previous = current;
-		current = this->path[current.first][current.second];
+		next = this->path[current.second][current.first];
 
-		new_dist = euclidean(start_x, start_y, current.second, current.first);
+		if (next.first == -1) break;
 
-		if (new_dist <= current_dist) 
-		{
-			current_dist = new_dist;
-			closest_spot = previous;
-		}
-	} 
-	while (current != this->path[current.first][current.second]);
+		current = next;
+	}
 
-	return closest_spot;
+	return current;
 }
 
 void Maze::draw_path(Mat &maze, int start_x, int start_y)
 {
-	pair<int, int> current = this->path[this->closest_spot.first][this->closest_spot.second],
-				   start_point = make_pair(start_y, start_x);
+	pair<int, int> current = this->path[start_y][start_x];
 
-	for (int i = 0; i < 10000; i++) 
+	while (current.first != -1)
 	{
-		current = this->path[current.first][current.second];
-		maze.at<Vec3b>(current.first, current.second) = Vec3b(0, 255, 0);	
+		current = this->path[current.second][current.first];
+		maze.at<Vec3b>(current.second, current.first) = Vec3b(0, 255, 0);
 	}
-
-	// do
-	// {
-	// 	current = this->path[current.first][current.second];
-	// 	maze.at<Vec3b>(current.first, current.second) = Vec3b(0, 255, 0);
-	// } 
-	// while (current != this->path[current.first][current.second]);
 }

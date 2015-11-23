@@ -14,20 +14,20 @@
 using namespace cv;
 using namespace std;
 
-typedef tuple<double, int, int, int, int> state;
+typedef tuple<int, int, int, int> state;
+typedef tuple<double, int, int, int, int> shortest_state;
 
 class Maze
 {
 public:
-	double euclidean(int, int, int, int);
-	double heuristic(int, int, int, int, Mat &);
-	void depth_first_search(Mat &, Mat &, int, int, int, int);
-	pair<int, int> next_step(int, int);
+	double euclidean(double, double, double, double);
+	double manhattan(double, double, double, double);
+	void depth_first_search(Mat &, Mat &, int, int);
+	pair<int, int> next_step(int, int, int);
 	void draw_path(Mat &, int, int);
 
 private:
 	vector <vector <pair<int, int> > > path;
-	pair<int, int> closest_spot;
 };
 
 #endif

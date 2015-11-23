@@ -92,7 +92,7 @@ void ImageProc::preprocess_image(Mat &img, Mat &dest)
 	// bitwise_not(dest, dest);
 }
 
-void ImageProc::get_point(Mat img, Point &point, int color, int tolerance)
+void ImageProc::get_point(Mat img, Point2f &point, int color, int tolerance)
 {
 	Mat HSV;
 
