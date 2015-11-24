@@ -70,6 +70,9 @@ int main(int argc, char** argv)
 	// Mat triangle = imread(image_name, CV_LOAD_IMAGE_GRAYSCALE);
 	// VideoCapture cap;
 
+	// cout << atan2(1, 0) << endl;
+	// cout << atan2(1, 0) << endl;
+
  	if (!cap.open(0)) 
  	{
  		cout << "Camera not available" << endl;
