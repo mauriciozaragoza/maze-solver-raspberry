@@ -8,7 +8,7 @@ program_INCLUDE_DIRS :=
 program_LIBRARY_DIRS :=
 program_LIBRARIES := 
 
-CPPFLAGS += $(foreach includedir,$(program_INCLUDE_DIRS),-I$(includedir)) `pkg-config --cflags opencv` -std=c++11 -lwiringPi
+CPPFLAGS += $(foreach includedir,$(program_INCLUDE_DIRS),-I$(includedir)) `pkg-config --cflags opencv` -std=c++11 -lwiringPi -lpthread
 LDFLAGS += $(foreach librarydir,$(program_LIBRARY_DIRS),-L$(librarydir)) 
 LDFLAGS += $(foreach library,$(program_LIBRARIES),-l$(library))
 
@@ -17,7 +17,7 @@ LDFLAGS += $(foreach library,$(program_LIBRARIES),-l$(library))
 all: $(program_NAME)
 
 $(program_NAME): $(program_OBJS)
-		$(LINK.cc) $(program_OBJS) `pkg-config --libs opencv` -lwiringPi -o $(program_NAME)
+		$(LINK.cc) $(program_OBJS) `pkg-config --libs opencv` -lpthread -lwiringPi -o $(program_NAME)
 
 clean:
 		@- $(RM) $(program_NAME)
