@@ -3,13 +3,15 @@
 
 #include <iostream>
 
-// #include <wiringPi.h>
+const int LEFT_MOTOR = 20;
+const int RIGHT_MOTOR = 21;
 
 using namespace std;
 
 class Control
 {
 public:
+    Control();
     void forward();
     void left();
     void right();

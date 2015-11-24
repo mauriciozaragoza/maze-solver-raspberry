@@ -103,7 +103,8 @@ void ImageProc::get_point(Mat img, Point2f &point, int color, int tolerance)
 	int value1 = (color + 180 - tolerance) % 180,
 		value2 = (color + tolerance) % 180;
 
-	inRange(HSV, Scalar(min(value1, value2), 150, 150), Scalar(max(value1, value2), 255, 255), HSV);
+	// inRange(HSV, Scalar(min(value1, value2), 150, 150), Scalar(max(value1, value2), 255, 255), HSV);
+	inRange(HSV, Scalar(color, 150, 150), Scalar(color + tolerance, 255, 255), HSV);
 
 	for (int y = 0; y < HSV.size().height; y++)
 	{
