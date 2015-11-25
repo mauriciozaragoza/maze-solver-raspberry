@@ -6,7 +6,7 @@
 
 Control::Control()
 {
-    wiringPiSetup();
+    // wiringPiSetup();
 
     pinMode(RIGHT_ENABLE, OUTPUT);
     pinMode(LEFT_ENABLE, OUTPUT);

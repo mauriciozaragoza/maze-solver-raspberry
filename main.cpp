@@ -80,7 +80,7 @@ int main(int argc, char** argv)
  	}
 	
 	// Mat triangle;
-	// Point2f position;
+	// Point position;
 	// cap >> triangle;
 
 	// Vec2f angle;
@@ -93,6 +93,11 @@ int main(int argc, char** argv)
 	// {
 	// 	cout << "No triangle found" << endl;
 	// }
+
+	// // line(color_maze, vehicle, vehicle + Point((next_step_vector * 10)[0], (next_step_vector * 10)[1]), 2);
+	// line(triangle, position, position + Point((angle * 100)[0], (angle * 100)[1]), 2);
+
+	// imwrite("triangle.png", triangle);
 
 	struct sigaction sigIntHandler;
 
@@ -122,29 +127,34 @@ int main(int argc, char** argv)
 	Mat thresh_maze(color_maze.rows, color_maze.cols, CV_8UC1);
 
 	cvtColor(color_maze, thresh_maze, COLOR_BGR2GRAY);
-	// imshow("webcam", color_maze);
-
-    // const char* image_name = argc > 1 ? argv[1] : "maze.png";
 
     Vec2f vehicle_angle(0.0f, 1.0f);
     const double vehicle_speed = 1.0;
     const double rotation_speed = 0.2;
 
-	Point vehicle, end;
+    double new_v_y, new_v_x;
 
-	// Mat thresh_maze = imread(image_name, CV_LOAD_IMAGE_GRAYSCALE);
-	// Mat color_maze = imread(image_name, CV_LOAD_IMAGE_COLOR);
+	Point2f vehicle, end;
 
 	preprocess(thresh_maze, color_maze, 500);
-	// imshow("to thresh_maze", thresh_maze);
 
-	// processing.get_point(color_maze, vehicle, c1, 20, 100, 100);
-	// processing.get_point(color_maze, vehicle_front, c2, 20, 100, 100);
 	processing.get_point(color_maze, end, c3, 15, c1, c2);
 
-	// circle(color_maze, vehicle, 10, Scalar(255, 0, 0));
-	// circle(color_maze, vehicle_front, 10, Scalar(0, 255, 0));
-	// circle(color_maze, end, 10, Scalar(0, 0, 255));
+	// DEMO
+	if (!processing.get_triangle(color_maze, vehicle_angle, vehicle))
+	{
+		cout << "NO TRIANGLE" << endl;
+		vehicle = Point2f(300, 300);
+		imshow("web", color_maze);
+		imwrite("webcam.png", color_maze);
+		// return 1;
+	}
+	else 
+	{
+		cout << "position " << vehicle << endl;
+	}
+
+	circle(color_maze, end, 10, Scalar(0, 0, 255));
 
 	cout << "Destination: " << end << endl;
 
@@ -153,75 +163,71 @@ int main(int argc, char** argv)
 	cout << "A" << endl;
 	solver.depth_first_search(color_maze, thresh_maze, end.x, end.y);
 
-	cout << "B" << endl;
-	// solver.draw_path(color_maze, vehicle.x, vehicle.y);
+	cout << "B " << vehicle << " " << endl;
+	solver.draw_path(color_maze, vehicle.x, vehicle.y);
 	cout << "Starting cycle" << endl;
 
 	for (int step = 0; step < 500; step++) 
 	{
-// cout << "asadas" << endl;
-		cap >> position_maze;
+		// cap >> position_maze;
 
-		if (!processing.get_triangle(position_maze, vehicle_angle, vehicle))
-		{
-			cout << "Could not find triangle" << endl;
-		}
-// cout << "bsadas " << vehicle_angle << " " << vehicle << endl;
+		// if (!processing.get_triangle(position_maze, vehicle_angle, vehicle))
+		// {
+		// 	cout << "Could not find triangle" << endl;
+		// }
 
 		pair<int, int> next_destination = solver.next_step(vehicle.x, vehicle.y, 20);
-// cout << "csadas" << endl;
-		if (next_destination.first == -1) break;
 
-		// Compute the next angle
-		// Take current rotation into account
-		// double angle = 
-		// 	atan2(next_destination.second - vehicle.y, next_destination.first - vehicle.x) -
-		// 	atan2(vehicle_angle[1], vehicle_angle[0]);
+		if (next_destination.first == -1) 
+		{
+			cout << "Found exit!" << endl;
+			break;
+		}
 
 		Vec2f next_step_vector(next_destination.second - vehicle.y, next_destination.first - vehicle.x);
 		next_step_vector = next_step_vector / norm(next_step_vector);
 
 		// Obtain the angle between the two vectors
-		// double angle = acos()
-
 		double angle = 
 			atan2(next_step_vector[1], next_step_vector[0]) - 
 			atan2(vehicle_angle[1], vehicle_angle[0]);
 
-// cout << "dsadas" << endl;
+		line(color_maze, vehicle, vehicle + Point2f((next_step_vector * 10)[0], (next_step_vector * 10)[1]), 2);
+		line(color_maze, vehicle, vehicle + Point2f((vehicle_angle * 20)[0], (vehicle_angle * 20)[1]), 2);
+
 		cout << vehicle << " " << vehicle_angle << " " << angle << " " << step << endl;
 
 		color_maze.at<Vec3b>(next_destination.second, next_destination.first) = Vec3b(255, 255, 0);
 
 		if (angle < -PI / 24.0)
 		{
-			control.right();
+			// control.right();
 			cout << "left" << endl;
-			// new_v_x = vehicle_angle[0] * cos(-rotation_speed) - vehicle_angle[1] * sin(-rotation_speed);
-			// new_v_y = vehicle_angle[0] * sin(-rotation_speed) + vehicle_angle[1] * cos(-rotation_speed);
-			// vehicle_angle[0] = new_v_x;
-			// vehicle_angle[1] = new_v_y;
-			// vehicle_angle = norm(vehicle_angle);
+			new_v_x = vehicle_angle[0] * cos(-rotation_speed) - vehicle_angle[1] * sin(-rotation_speed);
+			new_v_y = vehicle_angle[0] * sin(-rotation_speed) + vehicle_angle[1] * cos(-rotation_speed);
+			vehicle_angle[0] = new_v_x;
+			vehicle_angle[1] = new_v_y;
+			vehicle_angle = norm(vehicle_angle);
 		}
 		else if (angle > PI / 24.0) 
 		{
-			control.left();
+			// control.left();
 			cout << "right" << endl;
-			// new_v_x = vehicle_angle[0] * cos(rotation_speed) - vehicle_angle[1] * sin(rotation_speed);
-			// new_v_y = vehicle_angle[0] * sin(rotation_speed) + vehicle_angle[1] * cos(rotation_speed);
-			// vehicle_angle[0] = new_v_x;
-			// vehicle_angle[1] = new_v_y;
-			// vehicle_angle = norm(vehicle_angle);
+			new_v_x = vehicle_angle[0] * cos(rotation_speed) - vehicle_angle[1] * sin(rotation_speed);
+			new_v_y = vehicle_angle[0] * sin(rotation_speed) + vehicle_angle[1] * cos(rotation_speed);
+			vehicle_angle[0] = new_v_x;
+			vehicle_angle[1] = new_v_y;
+			vehicle_angle = norm(vehicle_angle);
 		}
 		else 
 		{
-			control.forward();
+			// control.forward();
 			cout << "forward" << endl;
-			// vehicle.x += (vehicle_speed * (1.0 + (float)(rand() % 10) / 9.0f)) * vehicle_angle[0];
-			// vehicle.y += (vehicle_speed * (1.0 + (float)(rand() % 10) / 9.0f)) * vehicle_angle[1];
+			vehicle.x += (vehicle_speed * (1.0 + (float)(rand() % 10) / 9.0f)) * vehicle_angle[0];
+			vehicle.y += (vehicle_speed * (1.0 + (float)(rand() % 10) / 9.0f)) * vehicle_angle[1];
 
-			// vehicle.x = std::min(std::max((float)vehicle.x, 0.0f), color_maze.cols - 1.0f);
-			// vehicle.y = std::min(std::max((float)vehicle.y, 0.0f), color_maze.rows - 1.0f);
+			vehicle.x = std::min(std::max((float)vehicle.x, 0.0f), color_maze.cols - 1.0f);
+			vehicle.y = std::min(std::max((float)vehicle.y, 0.0f), color_maze.rows - 1.0f);
 		}
 
 		if (vehicle.y >= 0 && vehicle.y < color_maze.rows &&
@@ -233,7 +239,7 @@ int main(int argc, char** argv)
 	}
 	
 	cout << "Finished!" << endl;
-	control.stop();
+	// control.stop();
 
 	// imshow("sol", color_maze);
 	imwrite("sol.png", color_maze);

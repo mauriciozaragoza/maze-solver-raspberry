@@ -18,9 +18,9 @@ class ImageProc
 public:
     void resize_to_max(Mat &, int);
 	void preprocess_image(Mat &, Mat &);
-	void get_point(Mat, Point &, int, int, int, int);
+	void get_point(Mat, Point2f &, int, int, int, int);
 	Mat undistorted_grid(Mat, Mat);
-    bool get_triangle(Mat, Vec2f &, Point &);
+    bool get_triangle(Mat, Vec2f &, Point2f &);
 
 private:
 	

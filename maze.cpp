@@ -80,11 +80,9 @@ void Maze::depth_first_search(Mat &maze, Mat &solve, int dest_x, int dest_y)
 		int y_prev = get<4>(current);
 
 		if (x < 0 || x >= maze.cols || y < 0 || y >= maze.rows) continue;
-		if (solve.at<unsigned char>(y, x) < 128) continue;
+		if (solve.at<unsigned char>(y, x) < 128 || visited[y][x]) continue;
 		
 		this->path[y][x] = make_pair(x_prev, y_prev);
-
-		solve.at<unsigned char>(y, x) = 0;
 		visited[y][x] = true;
 
 		int dist = WALL_HEURISTIC_ALPHA / wall_distance[y][x];
@@ -142,41 +140,33 @@ void Maze::depth_first_search(Mat &maze, Mat &solve, int dest_x, int dest_y)
 
 pair<int, int> Maze::next_step(int start_x, int start_y, int trail_size)
 {
-	start_x = std::min(std::max(start_x, 0), (int)this->path[0].size() - 1);
-	start_y = std::min(std::max(start_y, 0), (int)this->path.size() - 1);
-
-	// cout << "a " << start_x << " " << start_y << endl;
 	pair<int, int> current = this->path[start_y][start_x],
 				   next;
 
-// cout << "b" << endl;
-	if (current.first == -1) return current;
-// cout << "c" << endl;
+	// cout << current.first << " " << current.second << endl;
+
 	for (int i = 0; i < trail_size; i++)
 	{
-		// cout << "asd " << start_x << " " << start_y << " - " << current.second << " " << current.first << endl;
 		next = this->path[current.second][current.first];
 
 		if (next.first == -1) break;
 
 		current = next;
 	}
-// cout << "d" << endl;
+
 	return current;
 }
 
 void Maze::draw_path(Mat &maze, int start_x, int start_y)
 {
-	start_x = std::min(std::max(start_x, 0), (int)this->path[0].size() - 1);
-	start_y = std::min(std::max(start_y, 0), (int)this->path.size() - 1);
-
+	// cout << "len : " << this->path.size() << " " << this->path[0].size() << endl;
 	pair<int, int> current = this->path[start_y][start_x];
 
-	if (current.first == -1) return;
+	// cout << current.first << " and " << current.second << endl;
 
 	while (current.first != -1)
 	{
-		current = this->path[current.second][current.first];
 		maze.at<Vec3b>(current.second, current.first) = Vec3b(0, 255, 0);
+		current = this->path[current.second][current.first];
 	}
 }
