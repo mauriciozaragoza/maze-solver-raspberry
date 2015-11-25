@@ -80,6 +80,7 @@ void Maze::depth_first_search(Mat &maze, Mat &solve, int dest_x, int dest_y)
 		int y_prev = get<4>(current);
 
 		if (x < 0 || x >= maze.cols || y < 0 || y >= maze.rows) continue;
+		// if (visited[y][x]) continue;
 		if (solve.at<unsigned char>(y, x) < 128 || visited[y][x]) continue;
 		
 		this->path[y][x] = make_pair(x_prev, y_prev);
@@ -138,12 +139,20 @@ void Maze::depth_first_search(Mat &maze, Mat &solve, int dest_x, int dest_y)
 }
 
 
-pair<int, int> Maze::next_step(int start_x, int start_y, int trail_size)
+Vec2f Maze::next_step(int start_x, int start_y, int trail_size)
 {
+	start_x = min(start_x, (int)this->path[0].size() - 1);
+	start_y = min(start_y, (int)this->path.size() - 1);
+
+	// cout << "len : " << this->path.size() << " " << this->path[start_y].size() << endl;
+	// cout << start_x << " and " << start_y << endl;
+
 	pair<int, int> current = this->path[start_y][start_x],
 				   next;
 
-	// cout << current.first << " " << current.second << endl;
+	// cout << current.first << " or " << current.second << endl;
+
+	if (current.first == -1) return Vec2f();
 
 	for (int i = 0; i < trail_size; i++)
 	{
@@ -154,7 +163,9 @@ pair<int, int> Maze::next_step(int start_x, int start_y, int trail_size)
 		current = next;
 	}
 
-	return current;
+	Vec2f target_vector(current.first - start_x, current.second - start_y);
+
+	return target_vector / norm(target_vector);
 }
 
 void Maze::draw_path(Mat &maze, int start_x, int start_y)

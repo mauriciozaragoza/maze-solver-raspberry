@@ -8,7 +8,7 @@ const int LEFT_MOTOR = 10;
 const int RIGHT_ENABLE = 14;
 const int RIGHT_MOTOR = 13;
 
-const int PWM_RATE = 25;
+const int PWM_RATE = 10;
 
 using namespace std;
 

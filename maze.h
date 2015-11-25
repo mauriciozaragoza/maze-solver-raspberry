@@ -23,7 +23,7 @@ public:
 	double euclidean(double, double, double, double);
 	double manhattan(double, double, double, double);
 	void depth_first_search(Mat &, Mat &, int, int);
-	pair<int, int> next_step(int, int, int);
+	Vec2f next_step(int, int, int);
 	void draw_path(Mat &, int, int);
 
 private:
